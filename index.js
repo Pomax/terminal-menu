@@ -1,15 +1,11 @@
 var createCharm = require('charm');
 var inherits = require('inherits');
 var EventEmitter = require('events').EventEmitter;
-var through = require('through2');
-var duplexer = require('duplexer2');
-var visualwidth = require('visualwidth');
+var resumer = require('resumer');
 
 module.exports = function (opts) {
     return new Menu(opts || {});
 }
-
-inherits(Menu, EventEmitter);
 
 function Menu (opts) {
     var self = this;
@@ -19,7 +15,7 @@ function Menu (opts) {
     self.init = { x: self.x, y: self.y };
     self.items = [];
     self.lines = {};
-    self.selected = opts.selected || 0;
+    self.selected = 0;
     self.colors = {
         fg: opts.fg || 'white',
         bg: opts.bg || 'blue'
@@ -45,36 +41,30 @@ function Menu (opts) {
         x: self.width + self.padding.left + self.padding.right
     };
     
-    self._input = through(
-        function (buf, enc, next) {
-            self._ondata(buf);
-            next();
-        },
-        function () { self.emit('close') }
-    );
-    self._output = through();
-    self.charm = opts.charm || createCharm({
-        input: self._input
-    });
-    self.charm.on('error', function () {});
-    self.charm.pipe(self._output);
+    self.charm = opts.charm || createCharm();
+    self.stream = self.charm.pipe(resumer());
+    self.charm.display('reset');
+    self.charm.display('bright');
     
-    self.stream = self.charm.pipe(through());
-    try {
-        self.charm.display('reset');
-        self.charm.display('bright');
-    }
-    catch (e) {}
+    self._ondata = function (buf) {
+        self._ondataHandler(buf);
+    };
     
     process.nextTick(function () {
         self._ticked = true;
         self.charm.cursor(false);
         self._draw();
     });
+    
+    process.stdin.on('data', self._ondata);
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
 };
 
+inherits(Menu, EventEmitter);
+
 Menu.prototype.createStream = function () {
-    return duplexer(this._input, this._output);
+    return this.stream;
 };
 
 Menu.prototype.add = function (label, cb) {
@@ -118,12 +108,16 @@ Menu.prototype.jump = function (name) {
     }
 };
 
-Menu.prototype.close = function () {
-    this._input.end();
+Menu.prototype.close = function (keepalive) {
+    if (!keepalive) {
+      process.stdin.setRawMode(false);
+    }
+    process.stdin.removeListener('data', this._ondata);
     this.charm.cursor(true);
     this.charm.display('reset');
     this.charm.position(1, this.y + 1);
     this.charm.end();
+    process.stdin.pause();
 };
 
 Menu.prototype.reset = function () {
@@ -179,42 +173,32 @@ Menu.prototype._drawRow = function (index) {
         this.charm.foreground(this.colors.fg);
     }
     
-    var len = this.width - visualwidth.width(item.label, true) + 1;
-    this.charm.write(item.label + Array(Math.max(0, len)).join(' '));
+    this.charm.write(
+        item.label
+        + Array(Math.max(0, this.width - item.label.length)).join(' ')
+    );
 };
 
-Menu.prototype._ondata = function ondata (buf) {
-    var bytes = [].slice.call(buf);
-    while (bytes.length) {
-        var codes = [].join.call(bytes, '.');
-        if (/^(27.91.65|27,79.65|107|16)\b/.test(codes)) { // up or k
-            this.selected = (this.selected - 1 + this.items.length)
-                % this.items.length
-            ;
-            this._drawRow(this.selected + 1);
-            this._drawRow(this.selected);
-            if (/^107\b/.test(codes)) bytes.shift()
-            else bytes.splice(0, 3);
-        }
-        if (/^(27.91.66|27.79.66|106|14)\b/.test(codes)) { // down or j
-            this.selected = (this.selected + 1) % this.items.length;
-            this._drawRow(this.selected - 1);
-            this._drawRow(this.selected);
-            if (/^106\b/.test(codes)) bytes.shift()
-            else bytes.splice(0, 3);
-        }
-        else if (/^(3|113)/.test(codes)) { // ^C or q
-            this.charm.reset();
-            this._input.end();
-            this._output.end();
-            bytes.shift();
-        }
-        else if (/^(13|10)\b/.test(codes)) { // enter
-            this.charm.position(1, this.items[this.items.length-1].y + 2);
-            this.charm.display('reset');
-            this.emit('select', this.items[this.selected].label, this.selected);
-            bytes.shift();
-        }
-        else bytes.shift();
+Menu.prototype._ondataHandler = function ondata (buf) {
+    var codes = [].join.call(buf, '.');
+    if (codes === '27.91.65' || codes === '107') { // up || k
+        this.selected = (this.selected - 1 + this.items.length)
+            % this.items.length
+        ;
+        this._drawRow(this.selected + 1);
+        this._drawRow(this.selected);
+    }
+    else if (codes === '27.91.66' || codes === '106') { // down || j
+        this.selected = (this.selected + 1) % this.items.length;
+        this._drawRow(this.selected - 1);
+        this._drawRow(this.selected);
+    }
+    else if (codes === '3' || codes == '113') { // ^C || q
+        process.stdin.setRawMode(false);
+        this.charm.reset();
+        process.exit();
+    }
+    else if (codes === '13') { // enter
+        this.emit('select', this.items[this.selected].label, this.selected);
     }
 };

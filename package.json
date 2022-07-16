@@ -1,23 +1,42 @@
 {
-  "name": "terminal-menu",
-  "version": "2.1.1",
-  "description": "retro ansi terminal menus for serious 80s technicolor business",
-  "main": "index.js",
+  "_from": "https://github.com/Pomax/terminal-menu/archive/master.tar.gz",
+  "_id": "terminal-menu@0.3.2",
+  "_inBundle": false,
+  "_integrity": "sha512-FgRsnVHqDZoHnbTtTbQYSV30zjQ+lNlWM9K5l3iayNiP5AW/nid5IeRxrnxDfteePU24+XFNxysAJ4UD96imgg==",
+  "_location": "/terminal-menu-program/terminal-menu",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "remote",
+    "raw": "terminal-menu@https://github.com/Pomax/terminal-menu/archive/master.tar.gz",
+    "name": "terminal-menu",
+    "escapedName": "terminal-menu",
+    "rawSpec": "https://github.com/Pomax/terminal-menu/archive/master.tar.gz",
+    "saveSpec": "https://github.com/Pomax/terminal-menu/archive/master.tar.gz",
+    "fetchSpec": "https://github.com/Pomax/terminal-menu/archive/master.tar.gz"
+  },
+  "_requiredBy": [
+    "/terminal-menu-program"
+  ],
+  "_resolved": "https://github.com/Pomax/terminal-menu/archive/master.tar.gz",
+  "_shasum": "8247a09e06acb771c341e87ad68eb193b2366ee9",
+  "_spec": "terminal-menu@https://github.com/Pomax/terminal-menu/archive/master.tar.gz",
+  "_where": "/home/pi/node_modules/terminal-menu-program",
+  "author": {
+    "name": "James Halliday",
+    "email": "mail@substack.net",
+    "url": "http://substack.net"
+  },
+  "bugs": {
+    "url": "https://github.com/substack/terminal-menu/issues"
+  },
+  "bundleDependencies": false,
   "dependencies": {
     "charm": "~0.1.2",
-    "duplexer2": "0.0.2",
     "inherits": "~2.0.0",
-    "resumer": "~0.0.0",
-    "through2": "^0.6.3",
-    "visualwidth": "~0.0.1"
+    "resumer": "~0.0.0"
   },
-  "scripts": {
-    "test": "tap test/*.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/substack/terminal-menu.git"
-  },
+  "deprecated": false,
+  "description": "retro ansi terminal menus for serious 80s technicolor business",
   "homepage": "https://github.com/substack/terminal-menu",
   "keywords": [
     "menu",
@@ -26,10 +45,15 @@
     "80s",
     "ibm"
   ],
-  "author": {
-    "name": "James Halliday",
-    "email": "mail@substack.net",
-    "url": "http://substack.net"
+  "license": "MIT",
+  "main": "index.js",
+  "name": "terminal-menu",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/substack/terminal-menu.git"
   },
-  "license": "MIT"
+  "scripts": {
+    "test": "tap test/*.js"
+  },
+  "version": "0.3.2"
 }
